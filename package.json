@@ -1,0 +1,30 @@
+{
+  "name": "react_admin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Efremov Nikita <heknt90@mail.ru> (https://github.com/heknt90)",
+  "license": "ISC",
+  "browserslist": [
+    "last 2 chrome versions",
+    "last 2 firefox versions",
+    "last 2 ios versions"
+  ],
+  "dependencies": {
+    "core-js": "^3.9.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.13.10",
+    "@babel/preset-env": "^7.13.10",
+    "@babel/preset-react": "^7.12.13",
+    "babel-loader": "^8.2.2",
+    "gulp": "^4.0.2",
+    "gulp-sass": "^4.1.0",
+    "webpack": "^5.26.1",
+    "webpack-cli": "^4.5.0",
+    "webpack-stream": "^6.1.2"
+  }
+}
