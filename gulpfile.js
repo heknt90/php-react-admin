@@ -2,6 +2,7 @@ const gulp = require("gulp");
 const webpack = require("webpack-stream");
 const sass = require("gulp-sass");
 const server = require("browser-sync").create();
+const del = require("del");
 
 const dist = "C:/OpenServer/domains/react-admin/admin";
 
@@ -57,8 +58,18 @@ gulp.task("build-sass", () => {
     .pipe(server.stream());
 });
 
+gulp.task("clear-api", () => {
+  return del(dist + "/api", { force: true });
+});
+
 gulp.task("copy-api", () => {
   return gulp.src("./app/api/**/*.*").pipe(gulp.dest(dist + "/api"));
+});
+
+gulp.task("clear-assets", () => {
+  const path = dist + "/assets";
+  console.log(path);
+  return del(path, { force: true });
 });
 
 gulp.task("copy-assets", () => {
@@ -81,16 +92,17 @@ gulp.task("watch", () => {
   gulp.watch("./app/src/*.html", gulp.parallel("copy-html"));
   gulp.watch("./app/src/**/*.js", gulp.parallel("build-js"));
   gulp.watch(".app/src/scss/**/*.scss", gulp.parallel("build-sass"));
-  gulp.watch("./app/api/**/*.*", gulp.parallel("copy-api"));
-  gulp.watch("./app/assets/**/*.*", gulp.parallel("copy-assets"));
+  gulp.watch("./app/api/**/*.*", gulp.series("clear-api", "copy-api"));
+  gulp.watch("./app/assets/**/*.*", gulp.series("clear-assets", "copy-assets"));
 });
 
 gulp.task(
   "build",
+
   gulp.parallel(
     "copy-html",
-    "copy-assets",
-    "copy-api",
+    gulp.series("clear-assets", "copy-assets"),
+    gulp.series("clear-api", "copy-html"),
     "build-sass",
     "build-js"
   )
