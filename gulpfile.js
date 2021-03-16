@@ -71,7 +71,7 @@ gulp.task("copy-assets", () => {
 gulp.task("watch", () => {
   server.init({
     server: {
-      baseDir: dist,
+      baseDir: "C:/OpenServer/domains/react-admin",
     },
     notify: false,
     host: "localhost",
