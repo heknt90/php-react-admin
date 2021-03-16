@@ -1,11 +1,15 @@
 const gulp = require("gulp");
 const webpack = require("webpack-stream");
 const sass = require("gulp-sass");
+const server = require("browser-sync").create();
 
 const dist = "C:/OpenServer/domains/react-admin/admin";
 
 gulp.task("copy-html", () => {
-  return gulp.src("./app/src/index.html").pipe(gulp.dest(dist));
+  return gulp
+    .src("./app/src/index.html")
+    .pipe(gulp.dest(dist))
+    .pipe(server.stream());
 });
 
 gulp.task("build-js", () => {
@@ -41,14 +45,16 @@ gulp.task("build-js", () => {
         },
       })
     )
-    .pipe(gulp.dest(dist));
+    .pipe(gulp.dest(dist))
+    .pipe(server.stream());
 });
 
 gulp.task("build-sass", () => {
   return gulp
     .src("./app/src/scss/style.scss")
     .pipe(sass().on("error", sass.logError))
-    .pipe(gulp.dest(dist));
+    .pipe(gulp.dest(dist))
+    .pipe(server.stream());
 });
 
 gulp.task("copy-api", () => {
@@ -56,10 +62,22 @@ gulp.task("copy-api", () => {
 });
 
 gulp.task("copy-assets", () => {
-  return gulp.src("./app/assets/**/*.*").pipe(gulp.dest(dist + "/assets"));
+  return gulp
+    .src("./app/assets/**/*.*")
+    .pipe(gulp.dest(dist + "/assets"))
+    .pipe(server.stream());
 });
 
 gulp.task("watch", () => {
+  server.init({
+    server: {
+      baseDir: dist,
+    },
+    notify: false,
+    host: "localhost",
+    post: 3000,
+  });
+
   gulp.watch("./app/src/*.html", gulp.parallel("copy-html"));
   gulp.watch("./app/src/**/*.js", gulp.parallel("build-js"));
   gulp.watch(".app/src/scss/**/*.scss", gulp.parallel("build-sass"));
