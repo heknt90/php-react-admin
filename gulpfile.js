@@ -35,7 +35,7 @@ gulp.task("build-js", () => {
                   presets: [
                     [
                       "@babel/preset-env",
-                      { debug: true, corejs: 3, useBuiltIns: "usage" },
+                      { debug: false, corejs: 3, useBuiltIns: "usage" },
                     ],
                     "@babel/react",
                   ],
@@ -52,7 +52,7 @@ gulp.task("build-js", () => {
 
 gulp.task("build-sass", () => {
   return gulp
-    .src("./app/src/scss/style.scss")
+    .src("./app/scss/style.scss")
     .pipe(sass().on("error", sass.logError))
     .pipe(gulp.dest(dist))
     .pipe(server.stream());
@@ -91,7 +91,7 @@ gulp.task("watch", () => {
 
   gulp.watch("./app/src/*.html", gulp.parallel("copy-html"));
   gulp.watch("./app/src/**/*.js", gulp.parallel("build-js"));
-  gulp.watch(".app/src/scss/**/*.scss", gulp.parallel("build-sass"));
+  gulp.watch(".app/scss/**/*.scss", gulp.parallel("build-sass"));
   gulp.watch("./app/api/**/*.*", gulp.series("clear-api", "copy-api"));
   gulp.watch("./app/assets/**/*.*", gulp.series("clear-assets", "copy-assets"));
 });
