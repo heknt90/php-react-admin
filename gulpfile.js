@@ -102,7 +102,7 @@ gulp.task(
   gulp.parallel(
     "copy-html",
     gulp.series("clear-assets", "copy-assets"),
-    gulp.series("clear-api", "copy-html"),
+    gulp.series("clear-api", "copy-api"),
     "build-sass",
     "build-js"
   )
