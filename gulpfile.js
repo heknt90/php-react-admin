@@ -91,7 +91,7 @@ gulp.task("watch", () => {
 
   gulp.watch("./app/src/*.html", gulp.parallel("copy-html"));
   gulp.watch("./app/src/**/*.js", gulp.parallel("build-js"));
-  gulp.watch(".app/scss/**/*.scss", gulp.parallel("build-sass"));
+  gulp.watch("./app/scss/**/*.scss", gulp.parallel("build-sass"));
   gulp.watch("./app/api/**/*.*", gulp.series("clear-api", "copy-api"));
   gulp.watch("./app/assets/**/*.*", gulp.series("clear-assets", "copy-assets"));
 });
