@@ -3,6 +3,8 @@ import axios from "axios";
 import React, { Component } from "react";
 import DOMHelper from "../../helpers/dom-helper";
 import EditorText from "../editor-text";
+import UIKit from "uikit";
+import Spinner from "../spinner";
 
 export default class Editor extends Component {
   constructor() {
@@ -12,9 +14,13 @@ export default class Editor extends Component {
     this.state = {
       pageList: [],
       newPageName: "",
+      isLoading: true,
     };
 
     this.createNewPage = this.createNewPage.bind(this);
+
+    this.startSpinner = this.startSpinner.bind(this);
+    this.stopSpinner = this.stopSpinner.bind(this);
   }
 
   componentDidMount() {
@@ -42,21 +48,23 @@ export default class Editor extends Component {
       .then((html) => axios.post("./api/saveTempPage.php", { html }))
       .then(() => this.iframe.load("../temp.html"))
       .then(() => this.enableEditing())
-      .then(() => this.injectStyles());
-    // .then((data) => connsole.log(data));
-    // this.iframe.load(this.currentPage, () => {
-    //
-    // });
+      .then(() => this.injectStyles())
+      .then(() => this.stopSpinner());
   }
 
-  save() {
+  save(onResolve, onReject) {
     const newDOM = this.virtualDOM.cloneNode(this.virtualDOM);
     DOMHelper.unwrapTextNodes(newDOM);
     const html = DOMHelper.serializeDOMToString(newDOM);
-    axios.post("./api/savePage.php", {
-      pageName: this.currentPage,
-      html,
-    });
+    this.startSpinner();
+    axios
+      .post("./api/savePage.php", {
+        pageName: this.currentPage,
+        html,
+      })
+      .then(onResolve)
+      .catch(onReject)
+      .finally(this.stopSpinner);
   }
 
   enableEditing() {
@@ -117,34 +125,74 @@ export default class Editor extends Component {
       });
   }
 
-  render() {
-    // const { pageList } = this.state;
+  startSpinner() {
+    this.setState({ isLoading: true });
+  }
 
-    // const pages = pageList.map((page, ind) => (
-    //   <li key={ind}>
-    //     {page}{" "}
-    //     <a href="#" onClick={() => this.deletePage(page)}>
-    //       x
-    //     </a>
-    //   </li>
-    // ));
+  stopSpinner() {
+    this.setState({ isLoading: false });
+  }
+
+  render() {
+    const { isLoading } = this.state;
+    const modal = true;
+
+    let spinner;
+
+    isLoading ? (spinner = <Spinner active />) : (spinner = <Spinner />);
+
     return (
       <>
-        <button onClick={() => this.save()}>Save Page</button>
         <iframe src={this.currentPage} frameBorder="0"></iframe>
+
+        {spinner}
+
+        <div className="panel">
+          <button
+            className="uk-button uk-button-primary"
+            uk-toggle="target: #modal-save"
+          >
+            Опубликовать
+          </button>
+        </div>
+
+        <div id="modal-save" uk-modal={modal.toString()} container="false">
+          <div className="uk-modal-dialog uk-modal-body">
+            <h2 className="uk-modal-title">Сохранение</h2>
+            <p>Вы дейстительно хотите сохранить изменения?</p>
+            <p className="uk-text-right">
+              <button
+                className="uk-button uk-button-default uk-modal-close"
+                type="button"
+              >
+                Отменить
+              </button>
+              <button
+                className="uk-button uk-button-primary uk-modal-close"
+                type="button"
+                onClick={() =>
+                  this.save(
+                    () => {
+                      UIKit.notification({
+                        message: "Изменения сохранены!",
+                        status: "success",
+                      });
+                    },
+                    () => {
+                      UIKit.notification({
+                        message: "Ошибка сохранения",
+                        status: "danger",
+                      });
+                    }
+                  )
+                }
+              >
+                Опубликовать
+              </button>
+            </p>
+          </div>
+        </div>
       </>
-      //   <>
-      //     <input
-      //       onChange={(e) => {
-      //         this.setState(() => ({
-      //           newPageName: e.target.value,
-      //         }));
-      //       }}
-      //       type="text"
-      //     />
-      //     <button onClick={this.createNewPage}>Создать страницу</button>
-      //     <ul>{pages}</ul>
-      //   </>
     );
   }
 }

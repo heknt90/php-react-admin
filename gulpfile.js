@@ -53,7 +53,7 @@ gulp.task("build-js", () => {
 gulp.task("build-sass", () => {
   return gulp
     .src("./app/scss/style.scss")
-    .pipe(sass().on("error", sass.logError))
+    .pipe(sass({ includePaths: ["node_modules"] }).on("error", sass.logError))
     .pipe(gulp.dest(dist))
     .pipe(server.stream());
 });
