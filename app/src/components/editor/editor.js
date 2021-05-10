@@ -5,6 +5,8 @@ import DOMHelper from "../../helpers/dom-helper";
 import EditorText from "../editor-text";
 import UIKit from "uikit";
 import Spinner from "../spinner";
+import ConfirmModal from "../confirm-modal";
+import ChooseModal from "../choose-modal";
 
 export default class Editor extends Component {
   constructor() {
@@ -17,17 +19,22 @@ export default class Editor extends Component {
       isLoading: true,
     };
 
+    this.init = this.init.bind(this);
     this.createNewPage = this.createNewPage.bind(this);
-
+    this.save = this.save.bind(this);
     this.startSpinner = this.startSpinner.bind(this);
     this.stopSpinner = this.stopSpinner.bind(this);
   }
 
   componentDidMount() {
-    this.init(this.currentPage);
+    this.init(null, this.currentPage);
   }
 
-  init(page) {
+  init(e, page) {
+    if (e) {
+      e.preventDefault();
+    }
+    this.startSpinner();
     this.iframe = document.querySelector("iframe");
     this.open(page);
     this.loadPageList();
@@ -46,7 +53,10 @@ export default class Editor extends Component {
       })
       .then(DOMHelper.serializeDOMToString)
       .then((html) => axios.post("./api/saveTempPage.php", { html }))
-      .then(() => this.iframe.load("../temp.html"))
+      .then(() =>
+        this.iframe.load("../k4l3kds04-30kfk3-4kfokoj.340kd0ff-.43f;gd.html")
+      )
+      .then(() => axios.post("./api/deleteTempPage.php"))
       .then(() => this.enableEditing())
       .then(() => this.injectStyles())
       .then(() => this.stopSpinner());
@@ -96,7 +106,7 @@ export default class Editor extends Component {
   }
 
   loadPageList() {
-    axios.get("./api").then((res) => {
+    axios.get("./api/pageList.php").then((res) => {
       this.setState(() => {
         return {
           pageList: res.data,
@@ -134,7 +144,7 @@ export default class Editor extends Component {
   }
 
   render() {
-    const { isLoading } = this.state;
+    const { isLoading, pageList } = this.state;
     const modal = true;
 
     let spinner;
@@ -149,6 +159,12 @@ export default class Editor extends Component {
 
         <div className="panel">
           <button
+            className="uk-button uk-button-primary uk-margin-small-right"
+            uk-toggle="target: #modal-open"
+          >
+            Открыть
+          </button>
+          <button
             className="uk-button uk-button-primary"
             uk-toggle="target: #modal-save"
           >
@@ -156,42 +172,13 @@ export default class Editor extends Component {
           </button>
         </div>
 
-        <div id="modal-save" uk-modal={modal.toString()} container="false">
-          <div className="uk-modal-dialog uk-modal-body">
-            <h2 className="uk-modal-title">Сохранение</h2>
-            <p>Вы дейстительно хотите сохранить изменения?</p>
-            <p className="uk-text-right">
-              <button
-                className="uk-button uk-button-default uk-modal-close"
-                type="button"
-              >
-                Отменить
-              </button>
-              <button
-                className="uk-button uk-button-primary uk-modal-close"
-                type="button"
-                onClick={() =>
-                  this.save(
-                    () => {
-                      UIKit.notification({
-                        message: "Изменения сохранены!",
-                        status: "success",
-                      });
-                    },
-                    () => {
-                      UIKit.notification({
-                        message: "Ошибка сохранения",
-                        status: "danger",
-                      });
-                    }
-                  )
-                }
-              >
-                Опубликовать
-              </button>
-            </p>
-          </div>
-        </div>
+        <ConfirmModal modal={modal} target={"modal-save"} method={this.save} />
+        <ChooseModal
+          modal={modal}
+          target={"modal-open"}
+          data={pageList}
+          redirect={this.init}
+        />
       </>
     );
   }
