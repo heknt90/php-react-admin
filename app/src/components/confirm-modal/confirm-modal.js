@@ -17,22 +17,7 @@ const ConfirmModal = ({ modal, target, method }) => {
           <button
             className="uk-button uk-button-primary uk-modal-close"
             type="button"
-            onClick={() =>
-              method(
-                () => {
-                  UIKit.notification({
-                    message: "Изменения сохранены!",
-                    status: "success",
-                  });
-                },
-                () => {
-                  UIKit.notification({
-                    message: "Ошибка сохранения",
-                    status: "danger",
-                  });
-                }
-              )
-            }
+            onClick={() => method()}
           >
             Опубликовать
           </button>

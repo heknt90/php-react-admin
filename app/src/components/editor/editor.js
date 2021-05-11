@@ -71,7 +71,7 @@ export default class Editor extends Component {
     this.loadBackupsList();
   }
 
-  async save(onResolve, onReject) {
+  async save() {
     const newDOM = this.virtualDOM.cloneNode(this.virtualDOM);
     DOMHelper.unwrapTextNodes(newDOM);
     DOMHelper.unwrapImages(newDOM);
@@ -82,8 +82,8 @@ export default class Editor extends Component {
         pageName: this.currentPage,
         html,
       })
-      .then(onResolve)
-      .catch(onReject)
+      .then(() => this.showNotification("Успешно сохранено", "success"))
+      .catch(() => this.showNotification("Ошибка сохранения", "danger"))
       .finally(this.stopSpinner);
 
     this.loadBackupsList();
@@ -109,7 +109,13 @@ export default class Editor extends Component {
           `[editableimgid="${nodeId}"]`
         );
 
-        new EditorImages(element, virtualElement);
+        new EditorImages(
+          element,
+          virtualElement,
+          this.startSpinner,
+          this.stopSpinner,
+          this.showNotification
+        );
       });
   }
 
@@ -130,6 +136,13 @@ export default class Editor extends Component {
       }
     `;
     this.iframe.contentDocument.head.appendChild(style);
+  }
+
+  showNotification(message, status) {
+    UIKit.notification({
+      message,
+      status,
+    });
   }
 
   loadPageList() {
