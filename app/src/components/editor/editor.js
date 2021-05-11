@@ -34,6 +34,7 @@ export default class Editor extends Component {
     this.stopSpinner = this.stopSpinner.bind(this);
     this.restoreBackup = this.restoreBackup.bind(this);
     this.login = this.login.bind(this);
+    this.logout = this.logout.bind(this);
   }
 
   componentDidMount() {
@@ -48,7 +49,6 @@ export default class Editor extends Component {
 
   checkAuth() {
     axios.get("./api/checkAuth.php").then((res) => {
-      console.log(res.data);
       this.setState({
         isAuth: res.data.auth,
       });
@@ -57,7 +57,6 @@ export default class Editor extends Component {
 
   login(pass) {
     if (pass.length > 5) {
-      // console.log(pass);
       axios.post("./api/login.php", { password: pass }).then((res) => {
         this.setState({
           isAuth: res.data.auth,
@@ -71,6 +70,12 @@ export default class Editor extends Component {
         isLoginLengthError: true,
       });
     }
+  }
+
+  logout() {
+    axios.get("./api/logout.php").then(() => {
+      window.location.replace("/");
+    });
   }
 
   init(e, page) {
@@ -208,9 +213,7 @@ export default class Editor extends Component {
           };
         })
       )
-      .catch(() => {
-        // console.log("Резервные копии еще не были созданы.");
-      });
+      .catch(() => null);
   }
 
   restoreBackup(e, backup) {
@@ -304,7 +307,27 @@ export default class Editor extends Component {
         />
         {spinner}
         <Panel />
-        <ConfirmModal modal={modal} target={"modal-save"} method={this.save} />
+        <ConfirmModal
+          modal={modal}
+          target={"modal-save"}
+          method={this.save}
+          texts={{
+            title: "Сохранение",
+            description: "Вы действительно хотите сохранить изменения?",
+            btn: "Опубликовать",
+          }}
+        />
+        <ConfirmModal
+          modal={modal}
+          target={"modal-logout"}
+          method={this.logout}
+          texts={{
+            title: "Выход",
+            description:
+              "Вы действительно хотите выйти из административной панели?",
+            btn: "Выйти",
+          }}
+        />
         <ChooseModal
           modal={modal}
           target={"modal-open"}
