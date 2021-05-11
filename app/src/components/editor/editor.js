@@ -8,6 +8,7 @@ import Spinner from "../spinner";
 import ConfirmModal from "../confirm-modal";
 import ChooseModal from "../choose-modal";
 import Panel from "../panel";
+import EditorMeta from "../editor-meta";
 
 export default class Editor extends Component {
   constructor() {
@@ -136,7 +137,7 @@ export default class Editor extends Component {
         })
       )
       .catch(() => {
-        console.log("Резервные копии еще не были созданы.");
+        // console.log("Резервные копии еще не были созданы.");
       });
   }
 
@@ -199,8 +200,6 @@ export default class Editor extends Component {
     const { isLoading, pageList, backupsList } = this.state;
     const modal = true;
 
-    console.log(backupsList);
-
     let spinner;
 
     isLoading ? (spinner = <Spinner active />) : (spinner = <Spinner />);
@@ -227,6 +226,15 @@ export default class Editor extends Component {
           data={backupsList}
           redirect={this.restoreBackup}
         />
+        {this.virtualDOM ? (
+          <EditorMeta
+            modal={modal}
+            target={"modal-meta"}
+            virtualDom={this.virtualDOM}
+          />
+        ) : (
+          false
+        )}
       </>
     );
   }
