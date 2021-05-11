@@ -9,6 +9,7 @@ import ConfirmModal from "../confirm-modal";
 import ChooseModal from "../choose-modal";
 import Panel from "../panel";
 import EditorMeta from "../editor-meta";
+import EditorImages from "../editor-images";
 
 export default class Editor extends Component {
   constructor() {
@@ -52,6 +53,7 @@ export default class Editor extends Component {
       .get(`../../${page}?rnd=${Math.random()}`)
       .then((res) => DOMHelper.parseStringToDOM(res.data))
       .then(DOMHelper.wrapTextNodes)
+      .then(DOMHelper.wrapImages)
       .then((dom) => {
         this.virtualDOM = dom;
         return dom;
@@ -72,6 +74,7 @@ export default class Editor extends Component {
   async save(onResolve, onReject) {
     const newDOM = this.virtualDOM.cloneNode(this.virtualDOM);
     DOMHelper.unwrapTextNodes(newDOM);
+    DOMHelper.unwrapImages(newDOM);
     const html = DOMHelper.serializeDOMToString(newDOM);
     this.startSpinner();
     await axios
@@ -97,6 +100,17 @@ export default class Editor extends Component {
 
         new EditorText(element, virtualElement);
       });
+
+    this.iframe.contentDocument.body
+      .querySelectorAll("[editableimgid]")
+      .forEach((element) => {
+        const nodeId = element.getAttribute("editableimgid");
+        const virtualElement = this.virtualDOM.body.querySelector(
+          `[editableimgid="${nodeId}"]`
+        );
+
+        new EditorImages(element, virtualElement);
+      });
   }
 
   injectStyles() {
@@ -108,6 +122,10 @@ export default class Editor extends Component {
       }
       text-editor:focus {
         outline: 3px solid red;
+        outline-offset: 8px;
+      }
+      [editableimgid]:hover {
+        outline: 3px solid orange;
         outline-offset: 8px;
       }
     `;
@@ -207,6 +225,12 @@ export default class Editor extends Component {
     return (
       <>
         <iframe src="" frameBorder="0"></iframe>
+        <input
+          id="img-upload"
+          type="file"
+          accept="image/*"
+          style={{ dsiplay: "none" }}
+        />
 
         {spinner}
 
