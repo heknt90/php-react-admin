@@ -1,5 +1,9 @@
 <?php
-
+session_start();
+if ($_SESSION["auth"] != true ) {
+    header("HTTP/1.0 403 Forbidden");
+    die;
+}
 $_POST = json_decode(file_get_contents("php://input"), true);
 $newFile = '../../k4l3kds04-30kfk3-4kfokoj.340kd0ff-.43f;gd.html';
 
