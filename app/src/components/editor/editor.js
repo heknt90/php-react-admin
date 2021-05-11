@@ -7,6 +7,7 @@ import UIKit from "uikit";
 import Spinner from "../spinner";
 import ConfirmModal from "../confirm-modal";
 import ChooseModal from "../choose-modal";
+import Panel from "../panel";
 
 export default class Editor extends Component {
   constructor() {
@@ -15,15 +16,17 @@ export default class Editor extends Component {
     this.currentPage = "index.html";
     this.state = {
       pageList: [],
+      backupsList: [],
       newPageName: "",
       isLoading: true,
     };
 
     this.init = this.init.bind(this);
-    this.createNewPage = this.createNewPage.bind(this);
+    // this.createNewPage = this.createNewPage.bind(this);
     this.save = this.save.bind(this);
     this.startSpinner = this.startSpinner.bind(this);
     this.stopSpinner = this.stopSpinner.bind(this);
+    this.restoreBackup = this.restoreBackup.bind(this);
   }
 
   componentDidMount() {
@@ -38,6 +41,7 @@ export default class Editor extends Component {
     this.iframe = document.querySelector("iframe");
     this.open(page);
     this.loadPageList();
+    this.loadBackupsList();
   }
 
   open(page) {
@@ -60,14 +64,16 @@ export default class Editor extends Component {
       .then(() => this.enableEditing())
       .then(() => this.injectStyles())
       .then(() => this.stopSpinner());
+
+    this.loadBackupsList();
   }
 
-  save(onResolve, onReject) {
+  async save(onResolve, onReject) {
     const newDOM = this.virtualDOM.cloneNode(this.virtualDOM);
     DOMHelper.unwrapTextNodes(newDOM);
     const html = DOMHelper.serializeDOMToString(newDOM);
     this.startSpinner();
-    axios
+    await axios
       .post("./api/savePage.php", {
         pageName: this.currentPage,
         html,
@@ -75,6 +81,8 @@ export default class Editor extends Component {
       .then(onResolve)
       .catch(onReject)
       .finally(this.stopSpinner);
+
+    this.loadBackupsList();
   }
 
   enableEditing() {
@@ -115,25 +123,69 @@ export default class Editor extends Component {
     });
   }
 
-  createNewPage() {
+  loadBackupsList() {
     axios
-      .post("./api/createNewPage.php", { name: this.state.newPageName })
-      .then(() => {
-        this.loadPageList();
-      })
-      .catch(() => alert("Страница уже существует"));
-  }
-
-  deletePage(page) {
-    axios
-      .post("./api/deletePage.php", { name: page })
-      .then(() => {
-        this.loadPageList();
-      })
+      .get("./backups/backups.json")
+      .then((res) =>
+        this.setState(() => {
+          return {
+            backupsList: res.data.filter(
+              (backup) => backup.page === this.currentPage
+            ),
+          };
+        })
+      )
       .catch(() => {
-        alert("Страницы не существует");
+        console.log("Резервные копии еще не были созданы.");
       });
   }
+
+  restoreBackup(e, backup) {
+    if (e) {
+      e.preventDefault();
+    }
+
+    UIKit.modal
+      .confirm(
+        "Вы действительно хотите восстановить страницу из этой резервной копии? Все несохраненные данные будут потеряны!",
+        {
+          labels: { ok: "Восстановить", cancel: "Отмена" },
+        }
+      )
+      .then(() => {
+        this.startSpinner();
+        return axios
+          .post("./api/restoreBackup.php", {
+            page: this.currentPage,
+            file: backup,
+          })
+          .then((data) => {
+            this.open(this.currentPage);
+            this.stopSpinner();
+          });
+      })
+      .catch(() => null);
+  }
+
+  // createNewPage() {
+  //   axios
+  //     .post("./api/createNewPage.php", { name: this.state.newPageName })
+  //     .then(() => {
+  //       this.loadPageList();
+  //     })
+  //     .catch(() => alert("Страница уже существует"));
+  // }
+
+  // deletePage(page) {
+  //   axios
+  //     .post("./api/deletePage.php", { name: page })
+  //     .then(() => {
+  //       this.loadPageList();
+  //     })
+  //     .catch(() => {
+  //       alert("Страницы не существует");
+  //     });
+  // }
 
   startSpinner() {
     this.setState({ isLoading: true });
@@ -144,8 +196,10 @@ export default class Editor extends Component {
   }
 
   render() {
-    const { isLoading, pageList } = this.state;
+    const { isLoading, pageList, backupsList } = this.state;
     const modal = true;
+
+    console.log(backupsList);
 
     let spinner;
 
@@ -153,24 +207,11 @@ export default class Editor extends Component {
 
     return (
       <>
-        <iframe src={this.currentPage} frameBorder="0"></iframe>
+        <iframe src="" frameBorder="0"></iframe>
 
         {spinner}
 
-        <div className="panel">
-          <button
-            className="uk-button uk-button-primary uk-margin-small-right"
-            uk-toggle="target: #modal-open"
-          >
-            Открыть
-          </button>
-          <button
-            className="uk-button uk-button-primary"
-            uk-toggle="target: #modal-save"
-          >
-            Опубликовать
-          </button>
-        </div>
+        <Panel />
 
         <ConfirmModal modal={modal} target={"modal-save"} method={this.save} />
         <ChooseModal
@@ -178,6 +219,13 @@ export default class Editor extends Component {
           target={"modal-open"}
           data={pageList}
           redirect={this.init}
+        />
+
+        <ChooseModal
+          modal={modal}
+          target={"modal-backup"}
+          data={backupsList}
+          redirect={this.restoreBackup}
         />
       </>
     );
