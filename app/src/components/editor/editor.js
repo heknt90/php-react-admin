@@ -10,6 +10,7 @@ import ChooseModal from "../choose-modal";
 import Panel from "../panel";
 import EditorMeta from "../editor-meta";
 import EditorImages from "../editor-images";
+import Login from "../login";
 
 export default class Editor extends Component {
   constructor() {
@@ -21,6 +22,9 @@ export default class Editor extends Component {
       backupsList: [],
       newPageName: "",
       isLoading: true,
+      isAuth: false,
+      isLoginError: false,
+      isLoginLengthError: false,
     };
 
     this.init = this.init.bind(this);
@@ -29,21 +33,58 @@ export default class Editor extends Component {
     this.startSpinner = this.startSpinner.bind(this);
     this.stopSpinner = this.stopSpinner.bind(this);
     this.restoreBackup = this.restoreBackup.bind(this);
+    this.login = this.login.bind(this);
   }
 
   componentDidMount() {
-    this.init(null, this.currentPage);
+    this.checkAuth();
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.isAuth !== prevState.isAuth) {
+      this.init(null, this.currentPage);
+    }
+  }
+
+  checkAuth() {
+    axios.get("./api/checkAuth.php").then((res) => {
+      console.log(res.data);
+      this.setState({
+        isAuth: res.data.auth,
+      });
+    });
+  }
+
+  login(pass) {
+    if (pass.length > 5) {
+      // console.log(pass);
+      axios.post("./api/login.php", { password: pass }).then((res) => {
+        this.setState({
+          isAuth: res.data.auth,
+          isLoginError: !res.data.auth,
+          isLoginLengthError: false,
+        });
+      });
+    } else {
+      this.setState({
+        isLoginError: false,
+        isLoginLengthError: true,
+      });
+    }
   }
 
   init(e, page) {
     if (e) {
       e.preventDefault();
     }
-    this.startSpinner();
-    this.iframe = document.querySelector("iframe");
-    this.open(page);
-    this.loadPageList();
-    this.loadBackupsList();
+
+    if (this.state.isAuth) {
+      this.startSpinner();
+      this.iframe = document.querySelector("iframe");
+      this.open(page);
+      this.loadPageList();
+      this.loadBackupsList();
+    }
   }
 
   open(page) {
@@ -228,12 +269,29 @@ export default class Editor extends Component {
   }
 
   render() {
-    const { isLoading, pageList, backupsList } = this.state;
+    const {
+      isLoading,
+      pageList,
+      backupsList,
+      isAuth,
+      isLoginError,
+      isLoginLengthError,
+    } = this.state;
     const modal = true;
 
     let spinner;
 
     isLoading ? (spinner = <Spinner active />) : (spinner = <Spinner />);
+
+    if (!isAuth) {
+      return (
+        <Login
+          login={this.login}
+          lengthErr={isLoginLengthError}
+          loginErr={isLoginError}
+        />
+      );
+    }
 
     return (
       <>
@@ -242,13 +300,10 @@ export default class Editor extends Component {
           id="img-upload"
           type="file"
           accept="image/*"
-          style={{ dsiplay: "none" }}
+          style={{ display: "none" }}
         />
-
         {spinner}
-
         <Panel />
-
         <ConfirmModal modal={modal} target={"modal-save"} method={this.save} />
         <ChooseModal
           modal={modal}
@@ -256,7 +311,6 @@ export default class Editor extends Component {
           data={pageList}
           redirect={this.init}
         />
-
         <ChooseModal
           modal={modal}
           target={"modal-backup"}
